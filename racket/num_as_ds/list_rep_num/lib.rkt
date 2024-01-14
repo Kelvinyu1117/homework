@@ -39,14 +39,15 @@
 
 
 (define (highest-exponent-dvides n p)
-  (define (impl n p i)
-      (let-values ([(q r) (quotient/remainder n (expt p i))])
+  (define (impl n p i prev)
+      (define cur (* p prev))
+      (let-values ([(q r) (quotient/remainder n cur)])
         (cond 
-          [(equal? r 0) (impl n p (+ i 1))]
-          [else (- i 1)])))
+          [(equal? r 0) (impl n p (+ i 1) cur)]
+          [else (values (- i 1) prev)])))
   (cond 
-    [(divides? n p) (impl n p 1)] 
-    [else 0])
+    [(divides? n p) (impl n p 1 1)] 
+    [else (values 0 1)])
 )
 
 ; List definition:
@@ -66,11 +67,14 @@
                     [(and (is-not-empty? n) (is-not-empty? m)) 
                         (begin 
                             (define p (nth-prime i))
-                            (define a (highest-exponent-dvides n p))
-                            (define b (highest-exponent-dvides m p))
-                            (cond 
-                                [(and (not-equal? a 0) (not-equal? b 0) (equal? a b)) (impl (/ n (expt p a)) (/ m (expt p b)) (+ i 1))] 
-                                [else #f]))]
+                            (let-values 
+                              ([(a-exp a-prod) (highest-exponent-dvides n p)]
+                                [(b-exp b-prod) (highest-exponent-dvides m p)])
+                              
+                              (cond 
+                                [(and (not-equal? a-exp 0) (not-equal? b-exp 0) (equal? a-exp b-exp)) 
+                                  (impl (/ n a-prod) (/ m b-prod) (+ i 1))] 
+                                [else #f])))]
                     [else #f])
             ]
         )
@@ -82,16 +86,23 @@
 ; ; index-of
 ; ; Args: n representing a list s, k representing the index of the list [0, n - 1], with the assumption i is always valid
 ; ; Return: the element of list s at k-th position
-; (define (index-of n k)
-
-; )
+(define (index-of n k)
+  (define p (nth-prime k))
+  (let-values 
+    ([(exp prod) (highest-exponent-dvides n p)])
+    (cond
+      [(equal? exp 0) (error "index " k " is invalid for the list " n)]
+      [else exp]
+    )
+  )
+)
 
 ; ; head
 ; ; Args: n representing a list s
 ; ; Return: the first element of s
-; (define (head n)
-;     index-of(n 0)
-; )
+(define (head n)
+  (index-of n 0)
+)
 
 ; ; tail
 ; ; Args: n representing a list s
@@ -169,6 +180,18 @@
     (check-equal? (num (list 5 2)) 288)
     (check-equal? (num (list 5 2 8)) 112500000)
     (check-equal? (num (list 5 2 8 2)) 5512500000)
+
+    ; myequal
     (check-equal? (myequal (num (list 5 2 8 2)) (num (list 5 2 8 2))) #t)
     (check-equal? (myequal (num (list 5 2 8)) (num (list 5 2 8 2))) #f)
+    
+    ; index-of
+    (check-equal? (index-of (num (list 10 5 2)) 0) 10)
+    (check-equal? (index-of (num (list 10 5 2)) 1) 5)
+    (check-equal? (index-of (num (list 10 5 2)) 2) 2)
+
+    ; head
+    (check-equal? (head (num (list 10 5 2))) 10)
+    (check-equal? (head (num (list 5 2))) 5)
+    (check-equal? (head (num (list 2))) 2)
 )
