@@ -85,15 +85,14 @@
 
 ; ; index-of
 ; ; Args: n representing a list s, k representing the index of the list [0, n - 1], with the assumption i is always valid
-; ; Return: the element of list s at k-th position
+; ; Return: the element of list s at k-th position, 0 indicates error
 (define (index-of n k)
   (define p (nth-prime k))
   (let-values 
     ([(exp prod) (highest-exponent-dvides n p)])
     (cond
-      [(equal? exp 0) (error "index " k " is invalid for the list " n)]
-      [else exp]
-    )
+      [(equal? exp 0) 0]
+      [else exp])
   )
 )
 
@@ -104,12 +103,24 @@
   (index-of n 0)
 )
 
+
 ; ; tail
 ; ; Args: n representing a list s
 ; ; Return: a number representing the list obtained from s by removing its first element
-; (define (tail n)
+(define (tail n)
+  (define (impl n i j)
+    (let
+      ((p1 (nth-prime i))
+        (p2 (nth-prime j)))
+        (let-values 
+          ([(exp prod) (highest-exponent-dvides n p2)])
+            (cond
+            [(equal? exp 0) 1]
+            [else (* (expt p1 exp) (impl (/ n prod) (+ i 1) (+ j 1)))]))
+    ))
 
-; )
+  (impl (/ n (expt (nth-prime 0) (head n))) 0 1)
+)
 
 ; ; insert-at-head
 ; ; Args: n representing a list s, p representing a number
@@ -189,9 +200,17 @@
     (check-equal? (index-of (num (list 10 5 2)) 0) 10)
     (check-equal? (index-of (num (list 10 5 2)) 1) 5)
     (check-equal? (index-of (num (list 10 5 2)) 2) 2)
+    (check-equal? (index-of (num (list 10 5 2)) 3) 0)
 
     ; head
     (check-equal? (head (num (list 10 5 2))) 10)
     (check-equal? (head (num (list 5 2))) 5)
     (check-equal? (head (num (list 2))) 2)
+    (check-equal? (head (num (list ))) 0)
+
+    ; tail
+    (check-equal? (tail (num (list 5 2 8 2))) 656100)
+    (check-equal? (tail (num (list 5 2 8))) 26244)
+    (check-equal? (tail (num (list 5 2))) 4)
+    (check-equal? (tail (num (list 5))) 1)
 )
