@@ -87,13 +87,15 @@
 ; ; Args: n representing a list s, k representing the index of the list [0, n - 1], with the assumption i is always valid
 ; ; Return: the element of list s at k-th position, 0 indicates error
 (define (index-of n k)
-  (define p (nth-prime k))
-  (let-values 
-    ([(exp prod) (highest-exponent-dvides n p)])
-    (cond
-      [(equal? exp 0) 0]
-      [else exp])
-  )
+  (cond
+    [(is-empty? n) 0]
+    [else (begin (define p (nth-prime k))
+      (let-values 
+        ([(exp prod) (highest-exponent-dvides n p)])
+        (cond
+          [(equal? exp 0) 0]
+          [else exp]))
+    )])
 )
 
 ; ; head
@@ -104,54 +106,80 @@
 )
 
 
+(define (base-shift_impl n i j)
+  (let
+    ((p1 (nth-prime i))
+      (p2 (nth-prime j)))
+      (let-values 
+        ([(exp prod) (highest-exponent-dvides n p2)])
+          (cond
+          [(equal? exp 0) 1]
+          [else (* (expt p1 exp) (base-shift_impl (/ n prod) (+ i 1) (+ j 1)))]))
+  )
+)
+
+; b_1^(i_1), ... b_n^(i_n) => b_2^(i_1), ... b_(n+1)^(i_n)
+(define (base-shift-right n)
+  (base-shift_impl n 1 0)
+)
+
+; b_1^(i_1), ... b_n^(i_n) => b_0^(i_1), ... b_(n-1)^(i_n)
+(define (base-shift-left n)
+  (base-shift_impl n 0 1)
+)
+
 ; ; tail
 ; ; Args: n representing a list s
 ; ; Return: a number representing the list obtained from s by removing its first element
 (define (tail n)
-  (define (impl n i j)
-    (let
-      ((p1 (nth-prime i))
-        (p2 (nth-prime j)))
-        (let-values 
-          ([(exp prod) (highest-exponent-dvides n p2)])
-            (cond
-            [(equal? exp 0) 1]
-            [else (* (expt p1 exp) (impl (/ n prod) (+ i 1) (+ j 1)))]))
-    ))
-
-  (impl (/ n (expt (nth-prime 0) (head n))) 0 1)
+  (base-shift-left (/ n (expt (nth-prime 0) (head n))))
 )
 
 ; ; insert-at-head
 ; ; Args: n representing a list s, p representing a number
 ; ; Return: a number representing the list obtained by inserting p at the head of the list s 
-; (define (insert-at-head n p)
-; )
+(define (insert-at-head n p)
+  (* (expt (nth-prime 0) p) (base-shift-right n))
+)
 
 ; ; len
 ; ; Args: n representing a list s
 ; ; Return: the number of elements in the list
-; (define (len n)
-
-; )
+(define (len n)
+  (cond
+    [(is-empty? n) 0]
+    [else (+ (len (tail n)) 1)]
+  )
+)
 
 ; ; snoc
 ; ; Args: n representing a list s, q representing a number
 ; ; Return: the number representing the list obtained by inserting q at the end of the list s
-; (define (snoc n q)
-
-; )
+(define (snoc n q)
+  (cond
+    [(is-empty? n) (expt (nth-prime 0) q)]
+    [else (* n (expt (nth-prime (len n)) q))]
+  )
+)
 
 ; ; last
 ; ; Args: n representing a list s
 ; ; Return: the last element in the list s
-; (define (last n)
-; )
+(define (last n)
+  (index-of n (- (len n) 1))
+)
 
 ; ; insert-at
 ; ; Args: n representing a list s, x representing a second number x, y representing the position
 ; ; Return: the number representing the list obtained by inserting x in the yth position of s.
-; (define (insert-at n x y)
+;(define (insert-at n x y)
+; two sublists f:[0, y - 1], g:[y + 1, n - 1], shift the base of f to left, shift the base of g to right
+  ;;; (let
+  ;;;   ((f (slice n 0 (- y 1)))
+  ;;;   (g (slice n (+ y 1) (- (len n) 1))))
+  ;;;   (begin
+  ;;;   )
+  ;;; )  
 ; )
 
 
@@ -213,4 +241,31 @@
     (check-equal? (tail (num (list 5 2 8))) 26244)
     (check-equal? (tail (num (list 5 2))) 4)
     (check-equal? (tail (num (list 5))) 1)
+
+    ; insert-at-head
+    (check-equal? (insert-at-head (num (list)) 5) 32)
+    (check-equal? (insert-at-head (num (list 2)) 5) 288)
+    (check-equal? (insert-at-head (num (list 2 8)) 5) 112500000)
+    (check-equal? (insert-at-head (num (list 2 8 2)) 5) 5512500000)
+
+
+    ; len
+    (check-equal? (len (num (list))) 0)
+    (check-equal? (len (num (list 5))) 1)
+    (check-equal? (len (num (list 5 2))) 2)
+    (check-equal? (len (num (list 5 2 8))) 3)
+    (check-equal? (len (num (list 5 2 8 2))) 4)
+
+    ; snoc
+    (check-equal? (snoc (num (list)) 5) 32)
+    (check-equal? (snoc (num (list 5)) 2) 288)
+    (check-equal? (snoc (num (list 5 2)) 8) 112500000)
+    (check-equal? (snoc (num (list 5 2 8)) 2) 5512500000)
+
+    ; last
+    (check-equal? (last (num (list))) 0)
+    (check-equal? (last (num (list 5))) 5)
+    (check-equal? (last (num (list 5 2))) 2)
+    (check-equal? (last (num (list 5 2 8))) 8)
+    (check-equal? (last (num (list 5 2 8 2))) 2)
 )
