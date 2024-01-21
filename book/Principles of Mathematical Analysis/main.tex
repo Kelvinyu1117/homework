@@ -1,0 +1,32 @@
+\documentclass{article}
+
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage{pgffor}   % sudo apt install texlive-latex-extra
+\usepackage{hyperref}
+
+\newcommand{\inputfiles}[2]{
+    \def\filename{#1}
+    \def\totalexercises{1,...,#2}
+    \def\authorname{cecilia,gapry,kelvin}
+    \foreach \i in \totalexercises {
+        \IfFileExists{\filename\i.tex} {
+            \input{\filename\i.tex}
+        }
+    }
+}
+
+\title{Solution to Exercises on the \\Principles of Mathematical Analysis (3rd)}
+\author{Kelvin Wu}
+
+\begin{document}
+\maketitle
+
+\section*{Ch01 - The Real and Complex Number Systems}
+\inputfiles{Chapter01/ex0}{20}
+
+\section*{Ch02 - Basic Topology}
+\inputfiles{Chapter02/ex0}{30}
+
+\end{document}
