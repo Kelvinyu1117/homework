@@ -6,11 +6,15 @@
 \usepackage{pgffor}   % sudo apt install texlive-latex-extra
 \usepackage{hyperref}
 
-\newcommand{\inputfiles}[2]{
+\newcommand{\inputfiles}[1]{
+    \def\zero{0}
     \def\filename{#1}
-    \def\totalexercises{1,...,#2}
-    \def\authorname{cecilia,gapry,kelvin}
-    \foreach \i in \totalexercises {
+    \foreach \i in {1,...,9} {
+        \IfFileExists{\filename\zero\i.tex} {
+            \input{\filename\zero\i.tex}
+        }
+    }
+    \foreach \i in {10,...,99} {
         \IfFileExists{\filename\i.tex} {
             \input{\filename\i.tex}
         }
@@ -24,9 +28,9 @@
 \maketitle
 
 \section*{Ch01 - The Real and Complex Number Systems}
-\inputfiles{Chapter01/ex0}{20}
+\inputfiles{Chapter01/ex}
 
 \section*{Ch02 - Basic Topology}
-\inputfiles{Chapter02/ex0}{30}
+\inputfiles{Chapter02/ex}
 
 \end{document}
