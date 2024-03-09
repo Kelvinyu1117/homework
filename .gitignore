@@ -6,4 +6,5 @@
 *.out
 *.pdf
 *.synctex.gz
+*.vscode
 build

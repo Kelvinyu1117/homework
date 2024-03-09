@@ -31,7 +31,24 @@ let explode (s: string) : char list =
 (****************)
 
 let move (nfa: ('q,'s) nfa_t) (qs: 'q list) (s: 's option) : 'q list =
-  failwith "unimplemented"
+  let rec move_imp nfa qs s r_list =
+    match qs with
+      | [] -> r_list
+      | head :: tail ->
+        let rec find_transition state symbol delta =
+          match delta with
+          | [] -> None
+          | (from, t, dest) :: tail -> 
+              match (t, symbol) with
+              | (Some v, Some symbol) when from = state && v = symbol -> Some dest
+              | _ -> find_transition state symbol tail
+          in 
+          let result = find_transition head s nfa.delta in
+            match result with
+            | Some v -> move_imp nfa tail s (r_list @ [v])
+            | _ -> move_imp nfa tail s r_list
+  in
+  move_imp nfa qs s []
 
 let e_closure (nfa: ('q,'s) nfa_t) (qs: 'q list) : 'q list =
   failwith "unimplemented"
