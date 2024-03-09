@@ -1,0 +1,19 @@
+let move (nfa: ('q,'s) nfa_t) (qs: 'q list) (s: 's option) : 'q list =
+  let rec move_imp (qs: 'q list) (s: 's option) (r_list: 'q list) =
+    match qs with
+      | [] -> r_list
+      | head :: tail ->
+        let rec find_transition (state: 'q) (symbol: 's option) (delta: ('q, 's) transition list) : 'q option =
+          match delta with
+          | [] -> None
+          | (from, t, dest) :: rest ->
+            match (t, symbol) with
+            | (Some v, Some sym) when v = sym -> Some dest
+            | _ -> find_transition state symbol rest
+        in
+        let result = find_transition head s nfa.delta in
+        match result with
+        | Some v -> move_imp tail s (r_list @ [v])
+        | None -> move_imp tail s r_list
+    in
+    move_imp qs s []
