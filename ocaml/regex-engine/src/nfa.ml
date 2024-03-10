@@ -30,31 +30,54 @@ let explode (s: string) : char list =
 (* Part 1: NFAs *)
 (****************)
 
+let rec find_transition state symbol delta =
+  match delta with
+  | [] -> None
+  | (from, t, dest) :: tail -> 
+      match (t, symbol) with
+      | (Some v, Some symbol) when from = state && v = symbol -> Some dest
+      | (None, None) when from = state -> Some dest
+      | _ -> find_transition state symbol tail
+
+let rec find_all_transition state symbol delta =
+  match delta with
+  | [] -> []
+  | (from, t, dest) :: tail -> 
+      match (t, symbol) with
+      | (Some v, Some sym) when from = state && v = sym -> dest :: find_all_transition state symbol tail
+      | (None, None) when from = state -> dest :: find_all_transition state symbol tail
+      | _ -> find_all_transition state symbol tail 
+
 let move (nfa: ('q,'s) nfa_t) (qs: 'q list) (s: 's option) : 'q list =
-  let rec move_imp nfa qs s r_list =
+  let rec move_imp nfa qs s =
     match qs with
-      | [] -> r_list
+      | [] -> []
       | head :: tail ->
-        let rec find_transition state symbol delta =
-          match delta with
-          | [] -> None
-          | (from, t, dest) :: tail -> 
-              match (t, symbol) with
-              | (Some v, Some symbol) when from = state && v = symbol -> Some dest
-              | _ -> find_transition state symbol tail
-          in 
           let result = find_transition head s nfa.delta in
             match result with
-            | Some v -> move_imp nfa tail s (r_list @ [v])
-            | _ -> move_imp nfa tail s r_list
+            | Some v -> v :: (move_imp nfa tail s)
+            | _ -> move_imp nfa tail s
   in
-  move_imp nfa qs s []
+  move_imp nfa qs s
 
 let e_closure (nfa: ('q,'s) nfa_t) (qs: 'q list) : 'q list =
-  failwith "unimplemented"
-
+  let rec e_closure_imp nfa qs visited =
+    match qs with
+      | [] -> []
+      | head :: tail ->
+        if elem head visited then e_closure_imp nfa tail visited
+        else
+          let new_visited = insert head visited in
+            let next_states = find_all_transition head None nfa.delta in
+              match next_states with
+              | [] -> head :: e_closure_imp nfa tail new_visited
+              | _ -> 
+                let result = head :: e_closure_imp nfa next_states new_visited in
+                union result (e_closure_imp nfa tail new_visited)
+  in
+    e_closure_imp nfa qs []
 let accept (nfa: ('q,char) nfa_t) (s: string) : bool =
-  failwith "unimplemented"
+  
 
 (*******************************)
 (* Part 2: Subset Construction *)
