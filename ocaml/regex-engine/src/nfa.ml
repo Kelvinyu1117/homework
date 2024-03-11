@@ -77,7 +77,15 @@ let e_closure (nfa: ('q,'s) nfa_t) (qs: 'q list) : 'q list =
   in
     e_closure_imp nfa qs []
 let accept (nfa: ('q,char) nfa_t) (s: string) : bool =
-  
+  let rec accept_imp (nfa: ('q, char) nfa_t) (qs: 'q list) (s_list: char list) (visited: 'q list) =
+    match (qs, s_list) with
+    | [], _ -> false
+    | _, [] -> intersection visited nfa.fs != []
+    | (q :: qs', head :: tail) ->
+      let next_states = e_closure nfa (move nfa [q] (Some head)) in
+      accept_imp nfa next_states tail (union visited next_states)
+  in
+  accept_imp nfa [nfa.q0] (explode s) [nfa.q0]
 
 (*******************************)
 (* Part 2: Subset Construction *)
