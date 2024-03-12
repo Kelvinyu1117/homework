@@ -1,6 +1,6 @@
 open List
 open Nfa
-
+open Sets
 (*********)
 (* Types *)
 (*********)
@@ -27,7 +27,48 @@ let fresh =
 (*******************************)
 
 let regexp_to_nfa (regexp: regexp_t) : (int, char) nfa_t =
-  failwith "unimplemented"
+  let rec build_nfa_recurse nfa regexp = 
+    match regexp with
+    | Empty_String -> 
+      let q0 = fresh() in
+      { q0 = q0; qs = [q0]; fs = [q0]; delta = [(q0, None, q0)]; sigma = [] }
+    | Char (c) ->
+        let q0 = fresh() in
+        let q1 = fresh() in
+          {q0 = q0; qs = [q0; q1]; fs = [q1]; delta = [(q0, Some c, q1)]; sigma = [c]}
+    | Union (r1, r2) ->
+        let nfa1 = build_nfa_recurse nfa r1 in
+        let nfa2 = build_nfa_recurse nfa r2 in
+        let q0 = fresh() in
+        let qf = fresh() in
+        { q0 = q0;
+          qs = q0 :: qf :: (union nfa1.qs nfa2.qs); 
+          fs = [qf]; 
+          delta = (q0, None, nfa1.q0) :: (q0, None, nfa2.q0) :: ((List.hd nfa1.fs), None, qf) :: ((List.hd nfa2.fs), None, qf) ::  union nfa1.delta nfa2.delta;
+          sigma = union nfa1.sigma nfa2.sigma
+      }
+    | Concat (r1, r2) ->
+        let nfa1 = build_nfa_recurse nfa r1 in
+        let nfa2 = build_nfa_recurse nfa r2 in
+        {
+          q0 = nfa1.q0;
+          qs = union nfa1.qs nfa2.qs;
+          fs = nfa2.fs;
+          delta = union (List.map (fun state -> (state, None, nfa2.q0)) nfa1.fs) (union nfa1.delta nfa2.delta);
+          sigma = union nfa1.sigma nfa2.sigma
+        }
+    | Star (r) ->
+      let body_nfa = build_nfa_recurse nfa r in
+      let q0 = fresh () in
+      let qf = fresh () in
+        { qs = q0 :: qf :: body_nfa.qs
+        ; sigma = body_nfa.sigma
+        ; delta = (q0, None, qf) :: (q0, None, body_nfa.q0) :: (List.hd body_nfa.fs, None, qf) :: (List.hd body_nfa.fs, None, body_nfa.q0) :: body_nfa.delta
+        ; q0 = q0
+        ; fs = [qf]
+        }
+  in
+  build_nfa_recurse ({ qs = []; sigma = []; delta = []; q0 = fresh(); fs = [] }) regexp
 
 (*****************************************************************)
 (* Below this point is parser code that YOU DO NOT NEED TO TOUCH *)
