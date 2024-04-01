@@ -2,21 +2,20 @@ open Types
 open Str
 (* Part 1: Lexer - IMPLEMENT YOUR CODE BELOW *)
 
-let strip str = 
+let strip str =
   let s = Str.replace_first (Str.regexp "^ +") "" str in
   Str.replace_first (Str.regexp " +$") "" s
 
-
-let re_bool = Str.regexp "true|false"
+let re_bool = Str.regexp "true\\|false"
 let re_p_int = Str.regexp "[0-9]+"
 let re_n_int = Str.regexp "(-[0-9]+)"
 let re_str = Str.regexp "\"[^\"]*\""
 let re_id = Str.regexp "[a-zA-Z][a-zA-Z0-9]*"
 let re_lparen = Str.regexp "("
-let re_rparen = Str.regexp ")" 
+let re_rparen = Str.regexp ")"
 let re_lcurly = Str.regexp "{"
 let re_rcurly = Str.regexp "}"
-let re_dot = Str.regexp "."
+let re_dot = Str.regexp "\\."
 let re_eq = Str.regexp "="
 let re_neq = Str.regexp "<>"
 let re_gt = Str.regexp ">"
@@ -33,7 +32,7 @@ let re_add = Str.regexp "+"
 let re_sub = Str.regexp "-"
 let re_mult = Str.regexp "*"
 let re_div = Str.regexp "/"
-let re_concat = Str.regexp "^"
+let re_concat = Str.regexp "\\^"
 let re_let = Str.regexp "let"
 let re_def = Str.regexp "def"
 let re_in = Str.regexp "in"
@@ -47,209 +46,149 @@ let re_semi = Str.regexp ";"
 let re_skip = Str.regexp "[ \t\n]*"
 let re_extra = Str.regexp "[a-zA-Z0-9]+"
 
-let tokenize input = 
+let tokenize input =
   let rec consume_next_token s pos =
-    let try_extend_token_to_id_or_default s token last_pos default_value = 
-      if (Str.string_match re_extra s last_pos)
-        then let token_id = Str.matched_string s in
-        (Tok_ID (token^token_id))::(consume_next_token s (Str.match_end()))
-      else (default_value)::(consume_next_token s last_pos)
+    let try_extend_token_to_id_or_default s token last_pos default_value =
+      if Str.string_match re_extra s last_pos then
+        let token_id = Str.matched_string s in
+        Tok_ID (token ^ token_id) :: consume_next_token s (Str.match_end ())
+      else default_value :: consume_next_token s last_pos
     in
-      if pos >= (String.length s) then []
+    if pos >= String.length s then []
       (* Keywords*)
       (* Tok_Not*)
-      else if (Str.string_match re_let s pos) then
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-      
-        try_extend_token_to_id_or_default s token new_pos Tok_Not
-      
-      (* Tok_If*)
-      else if (Str.string_match re_if s pos) then
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-      
-        try_extend_token_to_id_or_default s token new_pos Tok_If
-      
-      (* Tok_Then*)
-      else if (Str.string_match re_then s pos) then
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-        
-        try_extend_token_to_id_or_default s token new_pos Tok_Then
-      
-      (* Tok_Else *)
-      else if (Str.string_match re_else s pos) then
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-        
-        try_extend_token_to_id_or_default s token new_pos Tok_Else
-      
-      (* Tok_Let *)
-      else if (Str.string_match re_let s pos) then 
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-        
-        try_extend_token_to_id_or_default s token new_pos Tok_Let
+    else if Str.string_match re_not s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
 
-      (* Tok_Def *)
-      else if (Str.string_match re_def s pos) then 
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-        
-        try_extend_token_to_id_or_default s token new_pos Tok_Def
-      
-      (* Tok_In *)
-      else if (Str.string_match re_in s pos) then 
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-        
-        try_extend_token_to_id_or_default s token new_pos Tok_In
+      try_extend_token_to_id_or_default s token new_pos Tok_Not
+    else if Str.string_match re_if s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
 
-      (* Tok_Rec *)
-      else if (Str.string_match re_rec s pos) then 
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-        
-        try_extend_token_to_id_or_default s token new_pos Tok_Rec
+      try_extend_token_to_id_or_default s token new_pos Tok_If
+    else if Str.string_match re_then s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
 
-      (* Tok_Fun *)
-      else if (Str.string_match re_fun s pos) then 
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-        
-        try_extend_token_to_id_or_default s token new_pos Tok_Fun
+      try_extend_token_to_id_or_default s token new_pos Tok_Then
+    else if Str.string_match re_else s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
 
-      (* Tok_Bool *)
-      else if (Str.string_match re_bool s pos) then
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in			
-        let re_bool_true = Str.regexp "true" in
-        let re_bool_false = Str.regexp "false" in
+      try_extend_token_to_id_or_default s token new_pos Tok_Else
+    else if Str.string_match re_let s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
 
-        if (Str.string_match re_extra s new_pos) then 
-          let token_id = Str.matched_string s in
-          (Tok_ID (token^token_id))::(consume_next_token s (Str.match_end()))
-        else if (Str.string_match re_bool_true token 0) then
-          (Tok_Bool (true))::(consume_next_token s new_pos)
-        else
-          (Tok_Bool (false))::(consume_next_token s new_pos)
-      
+      try_extend_token_to_id_or_default s token new_pos Tok_Let
+    else if Str.string_match re_def s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
+
+      try_extend_token_to_id_or_default s token new_pos Tok_Def
+    else if Str.string_match re_in s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
+
+      try_extend_token_to_id_or_default s token new_pos Tok_In
+    else if Str.string_match re_rec s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
+
+      try_extend_token_to_id_or_default s token new_pos Tok_Rec
+    else if Str.string_match re_fun s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
+
+      try_extend_token_to_id_or_default s token new_pos Tok_Fun
+    else if Str.string_match re_bool s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
+      let re_bool_true = Str.regexp "true" in
+      let re_bool_false = Str.regexp "false" in
+
+      if Str.string_match re_extra s new_pos then
+        let token_id = Str.matched_string s in
+        Tok_ID (token ^ token_id) :: consume_next_token s (Str.match_end ())
+      else if Str.string_match re_bool_true token 0 then
+        Tok_Bool true :: consume_next_token s new_pos
+      else Tok_Bool false :: consume_next_token s new_pos
       (* Tok_int, positive *)
-      else if (Str.string_match re_p_int s pos) then
-        
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-        (Tok_Int (int_of_string token))::(consume_next_token s new_pos)
-      
+    else if Str.string_match re_p_int s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
+      Tok_Int (int_of_string token) :: consume_next_token s new_pos
       (* Tok_int, negative *)
-      else if (Str.string_match re_n_int s pos) then
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-        let extract_n_int_re = Str.regexp "-[0-9]+" in
-        
-        if (Str.string_match extract_n_int_re token 0) then
-          (Tok_Int (int_of_string token))::(consume_next_token s new_pos)
-        else
-          raise (InvalidInputException ("tokenize, token: " ^ token))
+    else if Str.string_match re_n_int s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
+      let extract_n_int_re = Str.regexp "-[0-9]+" in
+
+      if Str.string_match extract_n_int_re token 0 then
+        Tok_Int (int_of_string token) :: consume_next_token s new_pos
+      else raise (InvalidInputException ("tokenize, token: " ^ token))
 
       (* Tok_String *)
-      else if (Str.string_match re_str s pos) then
-        let token = Str.matched_string s in
-        let new_pos = Str.match_end() in
-        let santize_str_re = Str.regexp "[^\"]*" in
+    else if Str.string_match re_str s pos then
+      let token = Str.matched_string s in
+      let new_pos = Str.match_end () in
+      let sanitize_str_re = Str.regexp "\"\\([^\"]*\\)\"" in
 
-        if (Str.string_match santize_str_re token 0) then
-          (Tok_String token)::(consume_next_token s new_pos)
-        else
-          raise (InvalidInputException ("tokenize, token: " ^ token))
+      if Str.string_match sanitize_str_re token 0 then
+        let sanitized_token = Str.matched_group 1 token in
+        Tok_String sanitized_token :: consume_next_token s new_pos
+      else raise (InvalidInputException ("tokenize, token: " ^ token))
       
       (* Tok_ID *)
-      else if (Str.string_match re_id s pos) then
-        let token = Str.matched_string s in 
-        (Tok_ID token)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_LParen *)
-      else if (Str.string_match re_lparen s pos) then (Tok_LParen)::(consume_next_token s (Str.match_end()))
-        
-      (* Tok_RParen *)
-      else if (Str.string_match re_rparen s pos) then (Tok_RParen)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_LCurly *)	
-      else if (Str.string_match re_lcurly s pos) then (Tok_LCurly)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_RCurly *)	
-      else if (Str.string_match re_rcurly s pos) then (Tok_RCurly)::(consume_next_token s (Str.match_end()))
-
-      (* Tok_Dot *)
-      else if (Str.string_match re_dot s pos) then (Tok_Dot)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_Equal *)
-      else if (Str.string_match re_eq s pos) then (Tok_Equal)::(consume_next_token s (Str.match_end()))
-
-      (* Tok_NotEqual *)
-      else if (Str.string_match re_neq s pos) then (Tok_NotEqual)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_GreaterEqual *)
-      else if (Str.string_match re_geq s pos) then (Tok_GreaterEqual)::(consume_next_token s (Str.match_end()))
-
-      (* Tok_LessEqual *)
-      else if (Str.string_match re_leq s pos) then (Tok_LessEqual)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_Greater *)
-      else if (Str.string_match re_gt s pos) then (Tok_Greater)::(consume_next_token s (Str.match_end()))
-
-      (* Tok_Less *)
-      else if (Str.string_match re_le s pos) then (Tok_Less)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_Or *)
-      else if (Str.string_match re_or s pos) then (Tok_Or)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_and *)
-      else if (Str.string_match re_and s pos) then (Tok_And)::(consume_next_token s (Str.match_end()))
-
-      (* Tok_Add *)
-      else if (Str.string_match re_add s pos) then (Tok_Add)::(consume_next_token s (Str.match_end()))
-
-      (* Tok_Add *)
-      else if (Str.string_match re_add s pos) then (Tok_Add)::(consume_next_token s (Str.match_end()))
-
-      (* Tok_Sub *)
-      else if (Str.string_match re_sub s pos) then (Tok_Sub)::(consume_next_token s (Str.match_end()))
-
-      (* Tok_Mult *)
-      else if (Str.string_match re_mult s pos) then (Tok_Mult)::(consume_next_token s (Str.match_end()))
-
-      (* Tok_Div *)
-      else if (Str.string_match re_div s pos) then (Tok_Div)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_Concat *)
-      else if (Str.string_match re_concat s pos) then (Tok_Concat)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_Arrow *)
-      else if (Str.string_match re_arrow s pos) then (Tok_Arrow)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_DoubleSemi *)
-      else if (Str.string_match re_double_semi s pos) then (Tok_DoubleSemi)::(consume_next_token s (Str.match_end()))
-      
-      (* Tok_Semi *)
-      else if (Str.string_match re_semi s pos) then (Tok_Semi)::(consume_next_token s (Str.match_end()))
-      
+    else if Str.string_match re_id s pos then
+      let token = Str.matched_string s in
+      Tok_ID token :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_lparen s pos then
+      Tok_LParen :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_rparen s pos then
+      Tok_RParen :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_lcurly s pos then
+      Tok_LCurly :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_rcurly s pos then
+      Tok_RCurly :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_dot s pos then
+      Tok_Dot :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_arrow s pos then
+      Tok_Arrow :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_eq s pos then
+      Tok_Equal :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_neq s pos then
+      Tok_NotEqual :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_geq s pos then
+      Tok_GreaterEqual :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_leq s pos then
+      Tok_LessEqual :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_gt s pos then
+      Tok_Greater :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_le s pos then
+      Tok_Less :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_or s pos then
+      Tok_Or :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_and s pos then
+      Tok_And :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_add s pos then
+      Tok_Add :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_sub s pos then
+      Tok_Sub :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_mult s pos then
+      Tok_Mult :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_div s pos then
+      Tok_Div :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_concat s pos then
+      Tok_Concat :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_double_semi s pos then
+      Tok_DoubleSemi :: consume_next_token s (Str.match_end ())
+    else if Str.string_match re_semi s pos then
+      Tok_Semi :: consume_next_token s (Str.match_end ())
       (* Skip whitespace, tab, newline*)
-      else if (Str.string_match re_skip s pos) then (consume_next_token s (Str.match_end()))
-      
-      else
-        raise (InvalidInputException ("tokenize, string: " ^ s))
-    in
-      consume_next_token input 0
-
-
-    
-
-
-    
-
-
-
-
-
+    else if Str.string_match re_skip s pos then
+      consume_next_token s (Str.match_end ())
+    else raise (InvalidInputException ("tokenize, string: " ^ s))
+  in
+  consume_next_token input 0

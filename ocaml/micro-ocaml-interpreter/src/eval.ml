@@ -1,4 +1,5 @@
 open Types
+open Utils
 
 (* Provided functions - DO NOT MODIFY *)
 
@@ -26,8 +27,100 @@ let rec update env x v =
 
 (* Evaluates MicroCaml expression [e] in environment [env],
    returning an expression, or throwing an exception on error *)
-let rec eval_expr env e = failwith "unimplemented"
 
+let string_of_op op = 
+  match op with
+  | Add -> "Add"
+  | Sub -> "Sub"
+  | Mult -> "Mult"
+  | Div -> "Div"
+  | Concat -> "Concat"
+  | Greater -> "Greater"
+  | Less -> "Less"
+  | GreaterEqual -> "GreaterEqual"
+  | LessEqual -> "LessEqual"
+  | Equal -> "Equal"
+  | NotEqual -> "NotEqual"
+  | Or -> "Or"
+  | And -> "And"
+
+let rec eval_expr env e =
+  match e with
+  | Int v -> Int v
+  | Bool v -> Bool v
+  | String v -> String v
+  | ID v -> lookup env v
+  | Fun (v, e1) -> failwith "unimplemented"
+  | Not e1 -> eval_not env e1
+  | Binop (op, e1, e2) -> eval_binop env op e1 e2
+  | If (e1, e2, e3) -> eval_if env e1 e2 e3
+  | App (e1, e2) -> failwith "unimplemented"
+  | Let (v, b, e1, e2) -> failwith "unimplemented"
+  | Closure (env, v1, e1) -> failwith "unimplemented"
+  | Record r -> failwith "unimplemented"
+  | Select (label, e) -> failwith "unimplemented"
+  | _ -> failwith "unimplemented"
+
+and eval_not env e =
+  let e1 = eval_expr env e in
+  match e1 with
+  | Bool v -> Bool (not v)
+  | _ ->
+      raise
+        (TypeError ("expression is not boolean type, e:" ^ string_of_expr e1))
+
+and eval_binop env op e1 e2 =
+  let reduced_e1 = eval_expr env e1 in
+  let reduced_e2 = eval_expr env e2 in
+
+  match (reduced_e1, reduced_e2) with
+  | Int a, Int b -> (
+    match op with
+      | Add -> Int (a + b)
+      | Sub -> Int (a - b)
+      | Mult -> Int (a * b)
+      | Div ->
+          if b = 0 then
+            raise Division_by_zero
+          else Int (a / b)
+      | Greater -> Bool (a > b)
+      | Less -> Bool (a < b)
+      | _ -> raise (TypeError ("op: " ^ (string_of_op op) ^ " is not defined for integer type, " ^ "a = " ^ (string_of_int a) ^ ", b = " ^ (string_of_int b))))
+  | Bool a, Bool b ->(
+    match op with
+    | Equal -> Bool(a = b)
+    | NotEqual -> Bool (a <> b)
+    | Or -> Bool (a || b)
+    | And -> Bool (a && b)
+    | _ -> raise (TypeError ("op: " ^ (string_of_op op) ^ " is not defined for boolean type, " ^ "a = " ^ (string_of_bool a) ^ ", b = " ^ (string_of_bool b))))
+  | String a, String b ->(
+      match op with
+      | Concat -> String(a ^ b)
+      | Equal -> Bool(a = b)
+      | NotEqual -> Bool (a <> b)
+      | _ -> raise (TypeError ("op: " ^ (string_of_op op) ^ " is not defined for string type, " ^ "a = " ^ a ^ ", b = " ^ b)))
+  | _ -> raise (TypeError("e1 = " ^ (string_of_expr reduced_e1) ^ ", e2 = " ^ (string_of_expr reduced_e2) ^ ", which has different types!"))
+
+and eval_if env e1 e2 e3 = 
+  let reduced_e1 = eval_expr env e1 in
+  let reduced_e2 = eval_expr env e2 in
+  let reduced_e3 = eval_expr env e3 in
+  match reduced_e1 with
+  | Bool(v) -> if v then reduced_e2 else reduced_e3
+  | _ -> raise (TypeError ("eval: if e1 then e2 else e3, e1 is not boolean type, e1=" ^ (string_of_expr reduced_e1) ^ ", e2 = " ^ (string_of_expr reduced_e2) ^ "e3 = " ^ (string_of_expr reduced_e3)))
+
+
+and eval_let env x b e1 e2 = 
+    match b with
+    | true ->
+      let new_env = (extend_tmp env x) in
+      let reduced_e1 = eval_expr env e1 in
+      update new_env x reduced_e1;
+      eval_expr new_env e2
+    | false ->
+      let reduced_e1 = eval_expr env e1 in
+      let new_env = extend env x reduced_e1 in
+      (eval_expr new_env e2)
 (* Part 2: Evaluating mutop directive *)
 
 (* Evaluates MicroCaml mutop directive [m] in environment [env],
