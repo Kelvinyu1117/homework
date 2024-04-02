@@ -10,9 +10,9 @@ let student_test1 _ =
     ~msg:("wrong: " ^ string_of_token (List.hd (tokenize ";;")))
 
 let student_test2 _ =
-    let a = tokenize "{length=7; height=255}.length" in
-    assert_equal a [ Tok_DoubleSemi ]
-      ~msg:("wrong: " ^ (string_of_list string_of_token a))
+    let a, b = parse_expr (tokenize "let abc = fun a -> a + 1 in abc 1") in
+    assert_equal (a,b) ([], Int(1))
+      ~msg:("wrong: " ^ (string_of_expr b))
 
 let suite = "student" >::: [ 
   "student_test1" >:: student_test1;

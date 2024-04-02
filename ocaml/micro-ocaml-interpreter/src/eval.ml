@@ -50,15 +50,15 @@ let rec eval_expr env e =
   | Bool v -> Bool v
   | String v -> String v
   | ID v -> lookup env v
-  | Fun (v, e1) -> failwith "unimplemented"
+  | Fun (v, e1) -> Closure(env, v, e1)
   | Not e1 -> eval_not env e1
   | Binop (op, e1, e2) -> eval_binop env op e1 e2
   | If (e1, e2, e3) -> eval_if env e1 e2 e3
-  | App (e1, e2) -> failwith "unimplemented"
-  | Let (v, b, e1, e2) -> failwith "unimplemented"
-  | Closure (env, v1, e1) -> failwith "unimplemented"
-  | Record r -> failwith "unimplemented"
-  | Select (label, e) -> failwith "unimplemented"
+  | App (e1, e2) -> eval_app env e1 e2
+  | Let (v, b, e1, e2) -> eval_let  env v b e1 e2
+  | Closure (env, v1, e1) -> Closure (env, v1, e1)
+  | Record r -> Record r
+  | Select (label, e) -> eval_select env label e
   | _ -> failwith "unimplemented"
 
 and eval_not env e =
@@ -81,10 +81,12 @@ and eval_binop env op e1 e2 =
       | Mult -> Int (a * b)
       | Div ->
           if b = 0 then
-            raise Division_by_zero
+            raise DivByZeroError
           else Int (a / b)
       | Greater -> Bool (a > b)
       | Less -> Bool (a < b)
+      | Equal -> Bool(a = b)
+      | NotEqual -> Bool (a <> b)
       | _ -> raise (TypeError ("op: " ^ (string_of_op op) ^ " is not defined for integer type, " ^ "a = " ^ (string_of_int a) ^ ", b = " ^ (string_of_int b))))
   | Bool a, Bool b ->(
     match op with
@@ -103,27 +105,56 @@ and eval_binop env op e1 e2 =
 
 and eval_if env e1 e2 e3 = 
   let reduced_e1 = eval_expr env e1 in
-  let reduced_e2 = eval_expr env e2 in
-  let reduced_e3 = eval_expr env e3 in
   match reduced_e1 with
-  | Bool(v) -> if v then reduced_e2 else reduced_e3
-  | _ -> raise (TypeError ("eval: if e1 then e2 else e3, e1 is not boolean type, e1=" ^ (string_of_expr reduced_e1) ^ ", e2 = " ^ (string_of_expr reduced_e2) ^ "e3 = " ^ (string_of_expr reduced_e3)))
+  | Bool(v) -> if v then eval_expr env e2 else eval_expr env e3
+  | _ -> raise (TypeError ("eval_if: if e1 then e2 else e3, e1 is not boolean type, e1=" ^ (string_of_expr reduced_e1)))
 
 
 and eval_let env x b e1 e2 = 
     match b with
     | true ->
       let new_env = (extend_tmp env x) in
-      let reduced_e1 = eval_expr env e1 in
+      let reduced_e1 = eval_expr new_env e1 in
       update new_env x reduced_e1;
       eval_expr new_env e2
     | false ->
       let reduced_e1 = eval_expr env e1 in
       let new_env = extend env x reduced_e1 in
       (eval_expr new_env e2)
+
+and eval_app env e1 e2 = 
+  let reduced_e1 = eval_expr env e1 in
+  let reduced_e2 = eval_expr env e2 in
+  match reduced_e1 with
+  | Closure(new_env, x, e) ->
+    eval_expr (extend new_env x reduced_e2) e
+  | _ -> raise (TypeError ("eval_app failed, app e1 e2, e1 = "^ (string_of_expr reduced_e1) ^ ", e2 = " ^ (string_of_expr reduced_e2)))
+
+and eval_select env label e = 
+  let rec find_record (label: label) records = 
+    match records with
+    | [] -> raise (SelectError("Failed to select record from label"))
+    | (Lab(x), y)::t -> if Lab(x) = label then y else (find_record label t) 
+  in
+  let reduced_e = eval_expr env e in
+  match reduced_e with
+  | Record r -> find_record label r
+  | _ -> raise (TypeError("eval_select failed, e cannot be evaluated to be Record type."))
+
 (* Part 2: Evaluating mutop directive *)
 
 (* Evaluates MicroCaml mutop directive [m] in environment [env],
    returning a possibly updated environment paired with
    a value option; throws an exception on error *)
-let eval_mutop env m = failwith "unimplemented"
+let rec eval_mutop env m = 
+  match m with
+  | NoOp -> (env, None)
+  | Def (v, e) -> (eval_def env v e)
+  | Expr e -> (env, Some (eval_expr env e))
+
+and eval_def env v e = 
+  let new_env = extend_tmp env v in
+  let reduced_e = eval_expr new_env e in
+  update new_env v reduced_e;
+  (new_env, Some(reduced_e))
+
