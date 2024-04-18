@@ -25,8 +25,8 @@ let rec optimize env e =
   | If (e1, e2, e3) -> optimize_if env e1 e2 e3
   | Let (v, e1, e2) -> optimize_let env v e1 e2
   | LetRec (v, e_type, e1, e2) -> optimize_let_rec env v e_type e1 e2
-  | Fun (v, e_type, e) -> optimize_fun env v e_type e
-  | App (e1, e2) -> optimize_app e1 e2
+  | Fun (v, e_type, e) -> Fun (v, e_type, optimize env e)
+  | App (e1, e2) -> optimize_app env e1 e2
   | Record r -> Record r
   | Select (label, e) -> optimize_select env label e
   | _ -> e
@@ -101,13 +101,31 @@ and optimize_if env e1 e2 e3 =
   let reduced_e1 = optimize env e1 in
     match reduced_e1 with
     | Bool(v) -> if v then optimize env e2 else optimize env e3
-    | _ -> If (reduced_e1, e2, e3)
-and optimize_let env v e1 e2 = failwith "unimplemented"
-
-and optimize_let_rec env v e_type e1 e2 = failwith "unimplemented"
-
-and optimize_fun env v e_type e = failwith "unimplemented"
-
-and optimize_app e1 e2 = failwith "unimplemented"
-
-and optimize_select env label e = failwith "unimplemented"
+    | _ -> If (reduced_e1, optimize env e2, optimize env e3)
+and optimize_let env v e1 e2 =
+  let reduced_e1 = optimize env e1 in
+  match e2 with
+  | Fun(v, e_type, e) -> (optimize env e2)
+  | LetRec(v, e_type, e1, e2) -> (optimize env e2)
+  | _ -> optimize (extend env v reduced_e1) e2
+  
+and optimize_let_rec env v e_type e1 e2 = 
+  LetRec(v, e_type, optimize env e1, optimize env e2)
+  
+and optimize_app env e1 e2 =
+let reduced_e1 = optimize env e1 in
+let reduced_e2 = optimize env e2 in
+  match reduced_e1 with
+  | Fun(v, e_type, e) ->
+    optimize (extend env v reduced_e2) e
+  | _ -> App (reduced_e1, reduced_e2)
+and optimize_select env label e =
+  let rec find_record (label: label) records = 
+    match records with
+    | [] -> Select (label, e)
+    | (Lab(x), y)::t -> if Lab(x) = label then y else (find_record label t) 
+  in
+  let reduced_e = optimize env e in
+  match reduced_e with
+  | Record r -> find_record label r
+  | _ -> Select (label, e)
