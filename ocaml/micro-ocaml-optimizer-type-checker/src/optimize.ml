@@ -127,5 +127,9 @@ and optimize_select env label e =
   in
   let reduced_e = optimize env e in
   match reduced_e with
-  | Record r -> find_record label r
-  | _ -> Select (label, e)
+  | Record r -> 
+    (let result = (find_record label r) in
+    match (find_record label r) with
+    | Select(label, e) -> result
+    | _ -> optimize env result)
+  | _ -> Select (label, optimize env e)

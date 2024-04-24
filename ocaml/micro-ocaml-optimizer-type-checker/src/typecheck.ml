@@ -21,7 +21,7 @@ let all_of iterable predicate =
   loop iterable
 let has_same_type arr k v = match (search arr k) with
   | None -> false
-  | Some y -> y == v
+  | Some y -> y = v
 
 let rec is_subtype t1 t2 = 
   if t1 = t2 then true
@@ -117,7 +117,7 @@ and typecheck_let gamma v e1 e2 =
 and typecheck_app gamma e1 e2 = 
   match typecheck gamma e1 with
   | TArrow(tau, tau') -> (
-    if (typecheck gamma e2) = tau then tau'
+    if is_subtype (typecheck gamma e2) tau then tau'
     else raise (TypeError("The application type is wrong")))
   | _ -> raise (TypeError("The target is not applicable"))
 
