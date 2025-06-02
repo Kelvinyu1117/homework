@@ -1,0 +1,14 @@
+[project]
+name = "cmu-10-414-dl-systems"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "mugrade",
+    "numdifftools>=0.9.41",
+    "pybind11>=2.13.6",
+]
+
+[tool.uv.sources]
+mugrade = { git = "https://github.com/dlsyscourse/mugrade.git" }
