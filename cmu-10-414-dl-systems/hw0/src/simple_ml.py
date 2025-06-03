@@ -112,7 +112,7 @@ def softmax_regression_epoch(X, y, theta, lr = 0.1, batch=100):
         I_y = np.eye(K)[y_sample]
         H = X_sample @ theta # dim: (n_samples, input_sim) * (input_dim, num_classes) = (n_samples, num_classes)
         Z = np.exp(H) / (np.sum(np.exp(H), axis=1, keepdims=True)) # (n_samples, num_classes)
-        grad = X_sample.T @ (Z - I_y)
+        grad = X_sample.T @ (Z - I_y) # (input_dim, n_samples) * (n_samples, num_classes) = (input_dim, num_classes)
         
         theta -= (lr/M) * grad #(input_dim, num_classes)
     ### END YOUR CODE
